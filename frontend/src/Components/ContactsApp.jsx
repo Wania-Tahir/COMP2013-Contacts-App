@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import ContactsCardsContainer from "./ContactsCardsContainer";
 import ContactForm from "./ContactForm";
-
+import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import Cookies from "js-cookie";
 export default function ContactsApp() {
+  
   //States
   const [contactsData, setContactsData] = useState([]);
   const [formData, setFormData] = useState({
@@ -15,11 +18,29 @@ export default function ContactsApp() {
   });
   const [postResponse, setPostResponse] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-
+  const [currentUser, setCurrentUser] = useState[() => {
+  const jwtToken = Cookies.get("jwt-authorization");
+  if (!jwtToken){
+    return "";
+  }
+  try{
+    const decodedToken = jwtDecode(jwtToken);
+    return decodedToken.username;
+  } catch {
+    return "";
+  }
+}]
   //useEffect
   useEffect(() => {
     handleContactsDB();
   }, [postResponse]);
+
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!currentUser){
+      navigate("/not-authorized");
+    }
+  }, []);
 
   //Handlers
   //GET Data from DB handler
@@ -120,9 +141,17 @@ export default function ContactsApp() {
     }
   };
 
+  const handleLogout = () => {
+    Cookies.remove("jwt-authorization");
+    setCurrentUser("");
+    navigate("/");
+  }
+
   //Render
   return (
     <div>
+      <h1>Welcome {currentUser}</h1>
+      <button onClick={() => handleLogout()}>Logout</button>
       <ContactForm
         name={formData.name}
         email={formData.email}
